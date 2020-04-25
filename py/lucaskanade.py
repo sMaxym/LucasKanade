@@ -1,4 +1,5 @@
 import scipy
+import scipy.ndimage
 import numpy as np
 import imageio
 import matplotlib.pyplot as plt
@@ -17,7 +18,11 @@ img = imageio.imread(sys.argv[1])
 img = rgb2gs(img)
 img = img.T
 
-imageio.imwrite('test.jpg', img)
+img_d = np.zeros(img.shape)
+scipy.ndimage.filters.sobel(img, 0, img_d)
+
+
+imageio.imwrite('test.jpg', np.linalg.pinv(img))
 
 # plt.imshow(img)
 # plt.show()
