@@ -21,7 +21,7 @@ class LucasKanade:
     def rgb2gs(self, img):
         return np.dot(img[..., :3], [0.2125, 0.7154, 0.0721])
 
-    def img_offset(val, step, max_val):
+    def img_offset(self, val, step, max_val):
         offset = max_val - val
         return offset if offset < step else 0
 
@@ -96,29 +96,113 @@ class LucasKanade:
         plt.imshow(img)
         plt.show()
 
-    def pyramidal_implement(self, img0, img1):
-        PYRAMID_LEVEL = 0
+    def pyramidal_implement(self, img0, img1, PYRAMID_LEVEL=2):
+
+        img0 = self.rgb2gs(img0)
+        img1 = self.rgb2gs(img1)
         first_img_pyramid = list(pyramid_gaussian(img0, max_layer=PYRAMID_LEVEL,
-                                                   multichannel=True))
+                                                   multichannel=False))
         second_img_pyramid = list(pyramid_gaussian(img1, max_layer=PYRAMID_LEVEL,
-                                                    multichannel=True))
+                                                    multichannel=False))
+        # print(img0.shape)
+        i = 7
+        u = np.zeros(shape=first_img_pyramid[PYRAMID_LEVEL - 1].shape)
+        v = np.zeros(shape=first_img_pyramid[PYRAMID_LEVEL - 1].shape)
+        level_results = [(0., 0.)]*10000
+        for level_img, level_next_img in zip(first_img_pyramid[::1], second_img_pyramid[::1]):
+            # print(level_img.shape)
+            level_result = self.implement(level_img, level_next_img, (i, i))
+            print(len(level_result))
+            # for k in range(len(level_result)):
+            #     level_results[k] += level_result[k]
+            # print(len(level_result))
+            self.show_results(level_img, level_result, (i, i))
+            i *= 2
+            # self.calculate(level_result, u, v, (i, i))
+            break
+            # u = cv.resize(u, dsize=(u.shape[0]*2, u.shape[1]*2))
+            # v = cv.resize(v, dsize=(u.shape[0]*2, u.shape[1]*2))
+            # plt.imshow(u)
+            # plt.show()
+            # plt.imshow(v)
+            # plt.show()
+            # plt.imshow(img0)
+            # print(len(level_result))
+            # self.show_results(level_img, level_result)
+            # g_L = 2*(g_L + level_result)
+            # # plt.imshow(level_img)
+            # # plt.show()
+        # return g_L
+
+    @staticmethod
+    def show_results(img, res, BLOCK_SHAPE=(7, 7)):
+        plt.imshow(img)
+        rows, cols = img.shape[0], img.shape[1]
+        block_rows, block_cols = BLOCK_SHAPE
+        col_parts = ceil(cols / block_cols)
+        row_parts = ceil(rows / block_rows)
+        for row in range(row_parts):
+            for col in range(col_parts):
+                diff_row, diff_col = block_rows, block_cols
+                if (row + 1) * block_rows >= rows:
+                    diff_row = rows - row * block_rows
+                if (col + 1) * block_cols >= cols:
+                    diff_col = cols - col * block_cols
+                diff_row //= 2
+                diff_col //= 2
+                if res[row * col_parts + col][1] < 1 and res[row * col_parts + col][0] < 1:
+                    continue
+                if diff_row < 0.1 or diff_col < 0.1:
+                    continue
+                plt.arrow(col * block_cols + diff_col, row * block_rows + diff_row, res[row * col_parts + col][1],
+                          res[row * col_parts + col][0], fc="k", ec="k", head_width=2, head_length=2)
+        plt.show()
+
+    def calculate(self, res, u, v, BLOCK_SHAPE=(7, 7)):
+        rows, cols = u.shape[0], u.shape[1]
+        print(u.shape)
+        block_rows, block_cols = BLOCK_SHAPE
+        col_parts = ceil(cols / block_cols)
+        row_parts = ceil(rows / block_rows)
+        for row in range(row_parts):
+            for col in range(col_parts):
+                diff_row, diff_col = block_rows, block_cols
+                if (row + 1) * block_rows >= rows:
+                    diff_row = rows - row * block_rows
+                if (col + 1) * block_cols >= cols:
+                    diff_col = cols - col * block_cols
+                diff_row //= 2
+                diff_col //= 2
+                try:
+                    if res[row * col_parts + col][1] < 1 and res[row * col_parts + col][0] < 1:
+                        continue
+                except:
+                    continue
+                # if diff_row < 0.1 or diff_col < 0.1:
+                #     continue
+                try:
+                    u[row, col] += res[row * col_parts + col][0]
+                    v[row, col] += res[row * col_parts + col][1]
+                except:
+                    pass
+
+                # plt.arrow(col * block_cols + diff_col, row * block_rows + diff_row, res[row * col_parts + col][1],
+                #           res[row * col_parts + col][0], fc="k", ec="k", head_width=2, head_length=2)
 
     def implement(self, img0_orig, img1_orig, BLOCK_SHAPE = (7, 7), sigma = 1.4):
+
         Gx = np.reshape(np.asarray([[-1, 1], [-1, 1]]), (2, 2))  # for image 1 and image 2 in x direction
         Gy = np.reshape(np.asarray([[-1, -1], [1, 1]]), (2, 2))  # for image 1 and image 2 in y direction
         Gt1 = np.reshape(np.asarray([[-1, -1], [-1, -1]]), (2, 2))  # for 1st image
         Gt2 = np.reshape(np.asarray([[1, 1], [1, 1]]), (2, 2))  # for 2nd image
         # img0_orig = imageio.imread('./../data/basketball1.png')
         # img1_orig = imageio.imread('./../data/basketball2.png')
-        img2_orig = imageio.imread('./../data/frame_02_delay-1s.gif')
-        img3_orig = imageio.imread('./../data/frame_03_delay-1s.gif')
 
-        img0, img1, img2, img3 = self.rgb2gs(img0_orig), \
-                                 self.rgb2gs(img1_orig), \
-                                 self.rgb2gs(img2_orig), \
-                                 self.rgb2gs(img3_orig)
-        plt.imshow(img0)
-        plt.show()
+        # img0, img1 = self.rgb2gs(img0_orig), self.rgb2gs(img1_orig)
+        img0, img1 = img0_orig, img1_orig
+        # plt.imshow(img0)
+
+        # plt.show()
         # img0 = np.array([[0, 0, 0],
         #                  [4, 1, 0],
         #                  [5, 3, 0]])
@@ -165,7 +249,8 @@ class LucasKanade:
             # trans = np.linalg.pinv(M.transpose().dot(M)).dot(M.transpose().dot(b))
             trans = np.linalg.pinv(M).dot(b)
             eigvals = np.linalg.eigvals(M)
-            if abs(trans[0] - min(eigvals)) < 0.1 and abs(trans[1] - min(eigvals)) < 0.1:
+
+            if abs(trans[0] - min(eigvals)) < 0.5 and abs(trans[1] - min(eigvals)) < 0.5:
                 res.append(np.array([0, 0]))
             else:
                 res.append(trans)
@@ -174,27 +259,7 @@ class LucasKanade:
         #     item *= 1
         #     print(item)
 
-        plt.imshow(img0_orig)
-        rows, cols = img0_orig.shape[0], img0_orig.shape[1]
-        block_rows, block_cols = BLOCK_SHAPE
-        col_parts = ceil(cols / block_cols)
-        row_parts = ceil(rows / block_rows)
-        for row in range(row_parts):
-            for col in range(col_parts):
-                diff_row, diff_col = block_rows, block_cols
-                if (row + 1) * block_rows >= rows:
-                    diff_row = rows - row * block_rows
-                if (col + 1) * block_cols >= cols:
-                    diff_col = cols - col * block_cols
-                diff_row //= 2
-                diff_col //= 2
-                if res[row * col_parts + col][1] < 1 and res[row * col_parts + col][0] < 1:
-                    continue
-                # if diff_row < 0.1 or diff_col < 0.1:
-                #     continue
-                plt.arrow(col * block_cols + diff_col, row * block_rows + diff_row, res[row * col_parts + col][1],
-                          res[row * col_parts + col][0], fc="k", ec="k", head_width=2, head_length=2)
-        plt.show()
+
         return res
 
 
@@ -212,8 +277,12 @@ if __name__ == '__main__':
     while True:
         ret, new_frame = cap.read()
         # new_frame = cv.cvtColor(new_frame, cv.COLOR_BGR2GRAY)
-        lk.implement(frame, new_frame)
+        x = lk.implement(lk.rgb2gs(frame), lk.rgb2gs(new_frame))
+        # x = lk.pyramidal_implement(frame, new_frame)
+        lk.show_results(frame, x)
+        break
         frame = new_frame
+
         # plt.imshow(img)
         # plt.show()
 
@@ -241,11 +310,10 @@ if __name__ == '__main__':
         # # print(rgb2gs(img0_orig).shape)
         # # for p in first_img_pyramid:
         # #     print(p.shape)
-        # g_L = np.zeros(shape=(100, 2))
+
         #
         #
-        # for level_img, level_next_img in zip(first_img_pyramid[::-1], second_img_pyramid[::-1]):
-        #     level_img, level_next_img = rgb2gs(level_img), rgb2gs(level_next_img)
+
         #     # print("Hello")
         #     # print("LVL", level_img.shape)
         #     res = np.zeros(shape=(100, 2))
@@ -255,35 +323,3 @@ if __name__ == '__main__':
         #
         #     index = -1
         #
-        #     deriv_t = level_img - level_next_img
-        #     deriv_x, deriv_y = np.zeros(level_img.shape), np.zeros(level_img.shape)
-        #
-        #
-        #     scipy.ndimage.sobel(level_img, axis=0, output=deriv_x, mode="constant")
-        #     scipy.ndimage.sobel(level_img, axis=1, output=deriv_y, mode="constant")
-        #
-        #     block_pairs = zip(img_block(deriv_x, PARTITION),
-        #                       img_block(deriv_y, PARTITION),
-        #                       img_block(deriv_t, PARTITION))
-        #     for deriv_x, deriv_y, deriv_t in block_pairs:
-        #         index += 1
-        #         if index >= 100:
-        #             continue
-        #
-        #         # deriv_t = level_img - level_next_img
-        #         # scipy.ndimage.sobel(level_img, axis=0, output=deriv_x, mode="constant")
-        #         # scipy.ndimage.sobel(level_next_img, axis=1, output=deriv_y, mode="constant")
-        #         b = bias(deriv_x, deriv_y, -deriv_t, gaussian2d)
-        #         M = coeff_matrix(deriv_x, deriv_y, gaussian2d)
-        #         eigvals = np.linalg.eigvals(M)
-        #         if min(eigvals) <= tau:
-        #             # res.append(np.array([0, 0]))
-        #             continue
-        #         # trans = np.linalg.pinv(M).dot(b)
-        #         trans = np.linalg.inv(M).dot(b)
-        #
-        #         res[index] += trans
-        #
-        #         # res.append(trans)
-        #         # show_merged([deriv_x, deriv_y, deriv_t])
-        #     g_L = 2*(g_L + res)
