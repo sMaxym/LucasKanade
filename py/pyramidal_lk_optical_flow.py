@@ -107,8 +107,8 @@ def LucasKanade(img_cur, img_next, features):
     Gt1 = np.reshape(np.asarray([[-1, -1], [-1, -1]]), (2, 2))  # for 1st image
     Gt2 = np.reshape(np.asarray([[1, 1], [1, 1]]), (2, 2))  # for 2nd image
 
-    BLOCK_SHAPE_ROW = 1
-    BLOCK_SHAPE_COL = 1
+    BLOCK_SHAPE_ROW = 5
+    BLOCK_SHAPE_COL = 5
 
     sigma, ev_min, bias_prec = 1, 0.05, 2
 
@@ -117,7 +117,7 @@ def LucasKanade(img_cur, img_next, features):
     Gx = np.reshape(np.asarray([[-1, 1], [-1, 1]]), (2, 2))  # for image 1 and image 2 in x direction
     Gy = np.reshape(np.asarray([[-1, -1], [1, 1]]), (2, 2))  # for image 1 and image 2 in y direction
 
-    MAX_LEVEL = 1
+    MAX_LEVEL = 4
     image0_pyramid = []
     image1_pyramid = []
     img1 = img_cur
@@ -131,17 +131,19 @@ def LucasKanade(img_cur, img_next, features):
 
     image0_pyramid = image0_pyramid[::-1]
     image1_pyramid = image1_pyramid[::-1]
-    u = np.zeros(shape=(image0_pyramid[0].shape[0] // 2, image0_pyramid[0].shape[1] // 2))
-
-    v = np.zeros(shape=(image1_pyramid[0].shape[0] // 2, image1_pyramid[0].shape[1] // 2))
+    # u = np.zeros(shape=(image0_pyramid[0].shape[0] // 2, image0_pyramid[0].shape[1] // 2))
+    #
+    # v = np.zeros(shape=(image1_pyramid[0].shape[0] // 2, image1_pyramid[0].shape[1] // 2))
 
     initial_tracking_blocks = np.copy(features)
-    tracking_blocks = features // (2 ** MAX_LEVEL)
-
+    # tracking_blocks = features // (2 ** MAX_LEVEL)
+    tracking_blocks = features // 1
+    g = np.zeros(shape=tracking_blocks.shape)
+    # print(g)
     for img_cur, img_next in zip(image0_pyramid, image1_pyramid):
 
-        u = np.round(cv.pyrUp(u))
-        v = np.round(cv.pyrUp(v))
+        # u = np.round(cv.pyrUp(u))
+        # v = np.round(cv.pyrUp(v))
 
         deriv_x = (convolve2d(img_cur, Gx) + convolve2d(img_next, Gx)) / 2
 
@@ -167,13 +169,13 @@ def LucasKanade(img_cur, img_next, features):
 
             min_ev = min(np.linalg.eigvals(M))
             if min_ev >= ev_min:
-                result = np.int32(np.matmul(np.linalg.pinv(M), b) / 2)
+                result = np.matmul(np.linalg.pinv(M), b) / 2
                 # u[row, col] += result[0]
                 # v[row, col] += result[1]
                 # tracking_blocks[index] = np.array([col + u[row, col], row + v[row, col]])
                 # print(result)
-                tracking_blocks[index] += result
+                g[index] += result
 
-        tracking_blocks = np.round(tracking_blocks) * 2
+        # tracking_blocks = np.round(tracking_blocks) * 2
 
-    return initial_tracking_blocks, tracking_blocks
+    return initial_tracking_blocks, tracking_blocks + np.int32(g)

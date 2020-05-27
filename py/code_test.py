@@ -7,7 +7,7 @@ import cv2 as cv
 
 if __name__ == '__main__':
 
-    feature_params = dict(maxCorners=100,
+    feature_params = dict(maxCorners=10,
                           qualityLevel=0.3,
                           minDistance=7,
                           blockSize=7)
@@ -41,13 +41,23 @@ if __name__ == '__main__':
             initial_tracking_blocks, tracking_blocks = LucasKanade(old_gray, frame_gray,
                                                                            tracking_blocks)
             vectors = initial_tracking_blocks - tracking_blocks
+
             super_vector = np.zeros(shape=(1, 2))
-
+            n = 0
             for vector in vectors:
-                super_vector += vector
+                if vector[0] != 0 or vector[1] != 0:
+                    super_vector += vector
+                    n += 1
+            n = 1 if n == 0 else n
 
-            super_vector //= (vectors.shape[0])
-
+            super_vector //= n
+            #
+            # for (a, b), (c, d) in zip(tracking_blocks, initial_tracking_blocks):
+            #     mask = cv.line(mask, (a, b), (c, d), color[random.randint(1, 99)].tolist(), 2)
+            #
+            #     frame = cv.circle(frame, (a, b), 5,
+            #                       color[random.randint(1, 99)].tolist(), -1)
+            #
             mask = cv.line(mask, (x, y), (x - int(super_vector[0][0]),
                                           y - int(super_vector[0][1])),
                            color[random.randint(1, 99)].tolist(), 2)
