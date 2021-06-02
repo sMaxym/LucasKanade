@@ -122,7 +122,7 @@ team==1.0
 testtools==2.4.0
 tifffile==2020.5.7
 toml==0.10.0
-urllib3==1.25.8
+urllib3==1.26.5
 webencodings==0.5.1
 Werkzeug==1.0.0
 WTForms==2.2.1
