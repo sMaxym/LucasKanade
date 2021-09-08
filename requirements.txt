@@ -77,7 +77,7 @@ paramiko==2.7.1
 passlib==1.7.2
 pbr==5.4.4
 pep517==0.8.1
-Pillow==7.1.2
+Pillow==8.3.2
 ply==3.11
 pooch==1.1.0
 progress==1.5
