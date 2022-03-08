@@ -46,7 +46,7 @@ Flask-SQLAlchemy==2.4.0
 Flask-WTF==0.14.3
 gensim==3.8.3
 html5lib==1.0.1
-httpie==2.0.0
+httpie==3.1.0
 idna==2.9
 imagecodecs==2020.2.18
 imageio==2.8.0
