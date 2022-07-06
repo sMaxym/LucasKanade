@@ -60,7 +60,7 @@ lensfun==0.3.95
 LibAppArmor==2.13.3
 lit==0.9.1.dev0
 louis==3.13.0
-lxml==4.5.0
+lxml==4.9.1
 Mako==1.1.2
 mallard-ducktype==1.0.2
 Markdown==3.1.1
