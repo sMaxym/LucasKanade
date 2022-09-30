@@ -54,7 +54,7 @@ importlib-metadata==1.5.0
 itsdangerous==1.1.0
 Jinja2==2.11.1
 jmespath==0.10.0
-joblib==0.14.1
+joblib==1.2.0
 kiwisolver==1.1.0
 lensfun==0.3.95
 LibAppArmor==2.13.3
